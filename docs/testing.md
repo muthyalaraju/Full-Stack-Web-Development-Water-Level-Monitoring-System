@@ -104,3 +104,4 @@ dist/assets/index-BnAdLk41.js   513.02 kB
 - **Accessible Names**: All buttons include explicit `aria-label` tags.
 - **Screen Reader Support**: Gauges implement `role="meter"` with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax`.
 - **Keyboard Navigation**: All interactive elements display visible focus outlines via `focus-visible:ring-2 focus-visible:ring-cyan-400`.
+

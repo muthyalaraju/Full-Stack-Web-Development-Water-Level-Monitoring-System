@@ -15,14 +15,24 @@ const app = express();
 // 1. Security HTTP Headers
 app.use(helmet());
 
+// Origin validator supporting localhost, Vercel preview domains, and configured FRONTEND_URL
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) return true;
+  const configured = (config.frontendUrl || '').split(',').map((u) => u.trim().replace(/\/+$/, ''));
+  if (configured.includes(origin.replace(/\/+$/, ''))) return true;
+  if (origin.endsWith('.vercel.app')) return true;
+  return false;
+};
+
 // 2. CORS Middleware
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || origin === config.frontendUrl || origin.startsWith('http://localhost:')) {
+      if (isAllowedOrigin(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Blocked by CORS policy'));
+        callback(new Error(`Blocked by CORS policy: origin ${origin} not permitted`));
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: smart-water-monitoring-backend
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: MQTT_BROKER_URL
+        value: mqtt://broker.emqx.io:1883
+      - key: MQTT_USERNAME
+        value: ""
+      - key: MQTT_PASSWORD
+        value: ""
+      - key: FRONTEND_URL
+        sync: false

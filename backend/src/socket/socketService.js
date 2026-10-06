@@ -19,16 +19,25 @@ let lastEmittedPump = null;
  * Initialize Socket.IO server attached to the HTTP server
  * @param {import('http').Server} httpServer 
  */
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) return true;
+  const configured = (config.frontendUrl || '').split(',').map((u) => u.trim().replace(/\/+$/, ''));
+  if (configured.includes(origin.replace(/\/+$/, ''))) return true;
+  if (origin.endsWith('.vercel.app')) return true;
+  return false;
+};
+
 export const initSocket = (httpServer) => {
   if (io) return io;
 
   io = new Server(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        if (!origin || origin === config.frontendUrl || origin.startsWith('http://localhost:')) {
+        if (isAllowedOrigin(origin)) {
           callback(null, true);
         } else {
-          callback(new Error('Blocked by Socket.IO CORS policy'));
+          callback(new Error(`Blocked by Socket.IO CORS policy: origin ${origin} not permitted`));
         }
       },
       methods: ['GET', 'POST'],

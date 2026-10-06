@@ -2,12 +2,19 @@ import pkg from 'pg';
 const { Pool } = pkg;
 import { config } from '../config/config.js';
 
+// Detect hosted database vs local PostgreSQL to configure SSL appropriately
+const isLocalhost = config.databaseUrl.includes('localhost') || config.databaseUrl.includes('127.0.0.1');
+const sslConfig = !isLocalhost || config.databaseUrl.includes('sslmode=require')
+  ? { rejectUnauthorized: false }
+  : false;
+
 // Initialize PostgreSQL Connection Pool
 export const pool = new Pool({
   connectionString: config.databaseUrl,
   max: 10, // Max concurrent clients in the pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  ssl: sslConfig,
 });
 
 pool.on('error', (err) => {

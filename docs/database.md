@@ -151,3 +151,4 @@ psql -U postgres -d smart_water_monitoring -f database/seed.sql
 SELECT * FROM tanks;
 SELECT * FROM pump_status;
 ```
+

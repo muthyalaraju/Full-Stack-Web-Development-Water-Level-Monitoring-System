@@ -1,132 +1,146 @@
-# Deployment & Production Runbook
+# Cloud Deployment Runbook: Vercel, Render & Hosted PostgreSQL
 
-This guide covers deployment procedures for the **IoT-Based Smart Water Level Monitoring and Management System** across local college demonstrations and production cloud environments.
-
----
-
-## 1. System Requirements
-
-### Hardware:
-- **Microcontroller**: ESP32 DevKit V1 (30-pin or 38-pin)
-- **Ultrasonic Sensor**: HC-SR04 (5V VCC, 40 kHz)
-- **Relay Module**: 5V 1-Channel Optocoupled Relay (Active LOW / HIGH)
-- **Pump**: Submersible 5V DC Mini Water Pump
-- **External Power Supply**: 5V 2A DC Power Adapter (Dedicated for pump and sensors)
-- **Display**: 16x2 I2C LCD Display (PCF8574 I2C Backpack, address `0x27` or `0x3F`)
-- **Resistors**: 1 kΩ and 2 kΩ (or 1.8 kΩ and 3.3 kΩ) for Echo voltage divider
-
-### Software & Run-Times:
-- **Node.js**: v20.x or v22.x+ LTS
-- **PostgreSQL**: v14.x, v16.x, or v18.x
-- **MQTT Broker**: EMQX Cloud, public EMQX broker (`broker.emqx.io:1883`), or local Eclipse Mosquitto
-- **Arduino IDE**: v2.x with ESP32 board support package
+This production runbook provides step-by-step instructions for deploying the **IoT-Based Smart Water Level Monitoring and Management System** using modern cloud platforms:
+- **Frontend**: Vercel (React 19 + Vite SPA)
+- **Backend**: Render (Node.js + Express + MQTT.js + Socket.IO)
+- **Database**: Hosted PostgreSQL (Neon, Supabase, or Render PostgreSQL)
 
 ---
 
-## 2. Local Demonstration Deployment
+## 1. Cloud Architecture & Data Links
 
-For laboratory evaluation or college capstone presentation:
-
-### Step 1: Database Setup
-1. Launch PostgreSQL service.
-2. Create database:
-   ```sql
-   CREATE DATABASE smart_water_monitoring;
-   ```
-3. Initialize tables and seed:
-   ```powershell
-   psql -U postgres -d smart_water_monitoring -f database/schema.sql
-   psql -U postgres -d smart_water_monitoring -f database/seed.sql
-   ```
-
-### Step 2: Backend Service
-1. Configure `backend/.env`:
-   ```ini
-   PORT=5000
-   NODE_ENV=development
-   DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/smart_water_monitoring
-   MQTT_BROKER_URL=mqtt://broker.emqx.io:1883
-   MQTT_USERNAME=
-   MQTT_PASSWORD=
-   FRONTEND_URL=http://localhost:5173
-   ```
-2. Start the server:
-   ```powershell
-   cd backend
-   npm install
-   npm start
-   ```
-
-### Step 3: Frontend Web Dashboard
-1. Install and start Vite dev server:
-   ```powershell
-   cd frontend
-   npm install
-   npm run dev
-   ```
-2. Open `http://localhost:5173` in your browser.
-
-### Step 4: Hardware Connection or Simulator
-- **Hardware Mode**: Power the ESP32. It connects to Wi-Fi and begins publishing to `water/tank1/reading`.
-- **Simulation Mode**: Run `node backend/src/utils/hardwareSimulator.js` to simulate live filling and draining in real-time.
+```
++-------------------------------------------------------------+
+|               FRONTEND: VERCEL (React 19 SPA)               |
+|            https://smart-water-monitoring.vercel.app        |
+|                                                             |
+|   Env:                                                      |
+|   - VITE_API_URL=https://water-backend.onrender.com/api     |
+|   - VITE_SOCKET_URL=https://water-backend.onrender.com      |
++------------------------------▲------------------------------+
+                               │ REST & WebSockets (WSS)
+                               │ (CORS Allowed)
++------------------------------▼------------------------------+
+|               BACKEND: RENDER (Web Service)                 |
+|             https://water-backend.onrender.com              |
+|                                                             |
+|   Env:                                                      |
+|   - PORT (Auto-assigned by Render)                          |
+|   - NODE_ENV=production                                     |
+|   - DATABASE_URL=postgresql://user:pwd@neon.tech/db?ssl=... |
+|   - MQTT_BROKER_URL=mqtt://broker.emqx.io:1883             |
+|   - FRONTEND_URL=https://smart-water-monitoring.vercel.app |
++------------------▲-----------------------▲------------------+
+                   │ (pg Pool with SSL)    │ (MQTT TCP / TLS)
+                   ▼                       ▼
++-------------------------+      +----------------------------+
+|   HOSTED POSTGRESQL     |      |      EMQX MQTT BROKER      |
+|   (Neon / Supabase /    |      |  broker.emqx.io:1883       |
+|    Render PostgreSQL)   |      |  Topic: water/tank1/#      |
++-------------------------+      +----------------------------+
+                                               ▲
+                                               │ Wi-Fi Telemetry
+                                 +-------------┴--------------+
+                                 |     PHYSICAL ESP32 NODE    |
+                                 |  (or Hardware Simulator)   |
+                                 +----------------------------+
+```
 
 ---
 
-## 3. Production Linux / Cloud Deployment
+## 2. Step 1: Hosted PostgreSQL Database Setup
 
-### 3.1 Backend Process Management with PM2
-Install PM2 globally:
-```bash
-npm install -g pm2
-```
-Start backend cluster:
-```bash
-cd /opt/water-monitoring/backend
-npm install --production
-pm2 start src/server.js --name "water-backend" -i max
-pm2 save
-pm2 startup
-```
+You can use any free hosted PostgreSQL provider (such as **Neon.tech**, **Supabase**, or **Render PostgreSQL**).
 
-### 3.2 Nginx Reverse Proxy Configuration
-Sample Nginx block handling both REST API, Socket.IO WebSockets, and static frontend:
+### 2.1 Provision Database
+1. Sign up at [neon.tech](https://neon.tech) or [supabase.com](https://supabase.com).
+2. Create a new PostgreSQL database named `smart_water_monitoring`.
+3. Copy the **Connection String (URI)**. It looks like:
+   ```
+   postgresql://water_user:mypassword@ep-dry-water-123456.us-east-2.aws.neon.tech/smart_water_monitoring?sslmode=require
+   ```
 
-```nginx
-server {
-    listen 80;
-    server_name water-monitor.example.com;
+### 2.2 Initialize Schema and Seed Data
+Connect to the hosted database using `psql` or the web SQL Editor in your provider dashboard:
+1. Paste and run [database/schema.sql](file:///c:/Users/muthy/OneDrive/Desktop/Water%20Level%20Monitoring%20Full%20Stack%20Web%20Development%20Project/database/schema.sql).
+2. Paste and run [database/seed.sql](file:///c:/Users/muthy/OneDrive/Desktop/Water%20Level%20Monitoring%20Full%20Stack%20Web%20Development%20Project/database/seed.sql).
+3. Verify that tables `tanks`, `sensor_readings`, `pump_status`, and `system_events` are created with `Tank 1` present in `tanks`.
 
-    # Static Frontend SPA
-    location / {
-        root /opt/water-monitoring/frontend/dist;
-        try_files $uri $uri/ /index.html;
-    }
+---
 
-    # Backend REST API
-    location /api/ {
-        proxy_pass http://127.0.0.1:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
+## 3. Step 2: Backend Deployment on Render
 
-    # Socket.IO WebSocket Stream
-    location /socket.io/ {
-        proxy_pass http://127.0.0.1:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
+### 3.1 Create Web Service
+1. Sign up at [render.com](https://render.com) and link your GitHub repository.
+2. In the Render Dashboard, click **New + $\rightarrow$ Web Service**.
+3. Select your repository.
+4. Configure service settings:
+   - **Name**: `smart-water-monitoring-backend`
+   - **Region**: Oregon (US West) or closest region
+   - **Root Directory**: `backend`
+   - **Runtime**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `node src/server.js`
+   - **Instance Type**: `Free`
 
-### 3.3 Production Security Checklist
-- [x] **Helmet Headers**: Enabled on all HTTP responses.
-- [x] **Rate Limiting**: Configured (100 requests per 15 minutes per IP on `/api/`).
-- [x] **Relay Electrical Isolation**: Relay optocoupler protects microcontroller from high pump inrush current.
-- [x] **Logic Voltage Stepping**: Resistor voltage divider protects ESP32 GPIO 18 from 5V ultrasonic echo pulses.
-- [x] **CORS Lockdown**: Confined strictly to trusted frontend origins.
-- [x] **Database Security**: Parameterized queries prevent SQL injection.
+### 3.2 Configure Environment Variables in Render
+Under the **Environment** tab, add the following key-value pairs:
+
+| Key | Value | Description |
+| :--- | :--- | :--- |
+| `NODE_ENV` | `production` | Enables production optimizations. |
+| `DATABASE_URL` | `postgresql://...neon.tech/smart_water_monitoring?sslmode=require` | Connection string to your hosted PostgreSQL. |
+| `MQTT_BROKER_URL` | `mqtt://broker.emqx.io:1883` | MQTT Broker URL. |
+| `MQTT_USERNAME` | *(Leave empty or set if private)* | Broker credentials. |
+| `MQTT_PASSWORD` | *(Leave empty or set if private)* | Broker credentials. |
+| `FRONTEND_URL` | `https://your-app.vercel.app` | Vercel domain for CORS protection. |
+
+> [!NOTE]
+> Render automatically sets the `PORT` environment variable and injects it into Node.js. The backend is configured to bind to `process.env.PORT`.
+
+### 3.3 Verify Deployment
+Once deployed, click your Render service URL (e.g. `https://smart-water-monitoring-backend.onrender.com`):
+- `GET /` returns:
+  ```json
+  {
+    "project": "IoT-Based Smart Water Level Monitoring and Management System",
+    "status": "ONLINE",
+    "version": "1.0.0"
+  }
+  ```
+- `GET /api/health` returns status `UP` with database `CONNECTED` and MQTT `CONNECTED`.
+
+---
+
+## 4. Step 3: Frontend Deployment on Vercel
+
+### 4.1 Deploy Vite SPA
+1. Sign up at [vercel.com](https://vercel.com) and click **Add New... $\rightarrow$ Project**.
+2. Import your GitHub repository.
+3. Configure project settings:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: Click edit and select `frontend`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+
+### 4.2 Configure Environment Variables in Vercel
+Expand **Environment Variables** and add:
+
+| Key | Value | Description |
+| :--- | :--- | :--- |
+| `VITE_API_URL` | `https://smart-water-monitoring-backend.onrender.com/api` | Render backend REST API endpoint. |
+| `VITE_SOCKET_URL` | `https://smart-water-monitoring-backend.onrender.com` | Render backend Socket.IO endpoint. |
+
+4. Click **Deploy**. Vercel will build the frontend via Vite and provide a production URL (e.g., `https://smart-water-monitoring.vercel.app`).
+5. Copy your Vercel URL and paste it back into the Render `FRONTEND_URL` setting so that CORS permits the requests.
+
+---
+
+## 5. Security & Verification Checklist
+
+- [x] **No Secrets in Git**: No `.env` files are tracked in source control; `.gitignore` strictly ignores `.env` and `.env.*`.
+- [x] **CORS Lockdown**: Backend only accepts requests from localhost, your designated Vercel domain, and `.vercel.app` preview branches.
+- [x] **SSL for Hosted DB**: `backend/src/db/index.js` automatically enables `ssl: { rejectUnauthorized: false }` when connecting to hosted cloud databases (Neon, Supabase, Render).
+- [x] **Flexible URLs**: Frontend services normalize `VITE_API_URL` and `VITE_SOCKET_URL` regardless of whether trailing slashes or `/api` are entered.
+- [x] **SPA Routing**: `frontend/vercel.json` ensures that deep links and client routing redirect correctly to `/index.html`.
+- [x] **WebSockets Over WSS**: Socket.IO connects over secure WebSockets (`wss://`) automatically on production HTTPS URLs.
