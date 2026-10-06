@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config/config.js';
 import { pool, testDbConnection } from './db/index.js';
+import { initMqttClient, closeMqttClient } from './mqtt/mqttClient.js';
 import { apiRateLimiter } from './middleware/rateLimiter.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 import apiRoutes from './routes/index.js';
@@ -16,7 +17,6 @@ app.use(helmet());
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, postman) or matching frontend
       if (!origin || origin === config.frontendUrl || origin.startsWith('http://localhost:')) {
         callback(null, true);
       } else {
@@ -53,7 +53,7 @@ app.get('/', (req, res) => {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// 7. Start HTTP Server
+// 7. Start HTTP Server & Initialize MQTT
 const server = app.listen(config.port, async () => {
   console.log(`================================================================`);
   console.log(`🚀 Smart Water Monitoring Backend running on port ${config.port}`);
@@ -70,6 +70,9 @@ const server = app.listen(config.port, async () => {
     console.warn(`⚠️ PostgreSQL Connection Warning: ${dbCheck.error}`);
     console.warn(`   Ensure the database 'smart_water_monitoring' is created and running.`);
   }
+
+  // Initialize MQTT Client (Subscriber)
+  initMqttClient();
 });
 
 // Graceful Shutdown
@@ -78,10 +81,11 @@ const handleShutdown = async (signal) => {
   server.close(async () => {
     console.log('HTTP server closed.');
     try {
+      await closeMqttClient();
       await pool.end();
       console.log('PostgreSQL pool drained.');
     } catch (err) {
-      console.error('Error closing database pool:', err.message);
+      console.error('Error during shutdown:', err.message);
     }
     process.exit(0);
   });
