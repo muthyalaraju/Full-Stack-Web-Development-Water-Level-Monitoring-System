@@ -114,3 +114,4 @@ To safeguard both the Express HTTP server and browser UI from rendering freezes 
    - If consecutive readings have identical `distance_cm`, `water_level_percent`, and `water_status` within a 2.5-second window, duplicate Socket.IO broadcast is dropped, conserving network bandwidth and browser repaint cycles.
 3. **Database Guardrails**:
    - Every reading undergoes integer and float validation before SQL parameterized insertion, preventing malformed telemetry from flooding PostgreSQL.
+

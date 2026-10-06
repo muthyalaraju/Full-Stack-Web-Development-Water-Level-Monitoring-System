@@ -428,3 +428,4 @@ void reconnectMQTT() {
                   mqttClient.state(), MQTT_RETRY_INTERVAL);
   }
 }
+

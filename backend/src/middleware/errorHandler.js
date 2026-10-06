@@ -26,3 +26,4 @@ export const errorHandler = (err, req, res, next) => {
     ...(config.nodeEnv === 'development' && { stack: err.stack }),
   });
 };
+

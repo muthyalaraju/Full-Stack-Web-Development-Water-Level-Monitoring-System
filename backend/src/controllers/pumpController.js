@@ -61,10 +61,10 @@ export const controlPump = async (req, res, next) => {
 
     if (current) {
       if (command === 'AUTO' && current.control_mode === CONTROL_MODE.AUTO) {
-        return res.status(409).json({
-          success: false,
-          error: 'ConflictError',
+        return res.status(200).json({
+          success: true,
           message: 'System is already configured in autonomous closed-loop (AUTO) mode.',
+          alreadyInState: true,
         });
       }
 

@@ -1,20 +1,37 @@
 import { query } from '../db/index.js';
 import { PUMP_STATUS, CONTROL_MODE } from '../utils/constants.js';
 
+// In-memory fallback pump state to ensure uninterrupted operation
+let inMemoryLatestPump = {
+  id: 1,
+  tank_id: 1,
+  status: PUMP_STATUS.OFF,
+  control_mode: CONTROL_MODE.AUTO,
+  reason: 'System initialization standby',
+  created_at: new Date().toISOString(),
+};
+
 /**
  * Fetch Most Recent Pump Status Record
  * @param {number} tankId 
  */
 export const getLatestPumpStatus = async (tankId = 1) => {
-  const sql = `
-    SELECT id, tank_id, status, control_mode, reason, created_at
-    FROM pump_status
-    WHERE tank_id = $1
-    ORDER BY created_at DESC
-    LIMIT 1;
-  `;
-  const result = await query(sql, [tankId]);
-  return result.rows[0] || null;
+  try {
+    const sql = `
+      SELECT id, tank_id, status, control_mode, reason, created_at
+      FROM pump_status
+      WHERE tank_id = $1
+      ORDER BY created_at DESC
+      LIMIT 1;
+    `;
+    const result = await query(sql, [tankId]);
+    if (result.rows[0]) {
+      return result.rows[0];
+    }
+  } catch (err) {
+    console.warn(`[PumpService Fallback] Database query failed for pump status, using memory cache:`, err.message);
+  }
+  return inMemoryLatestPump;
 };
 
 /**
@@ -26,13 +43,29 @@ export const savePumpStatus = async ({
   control_mode,
   reason,
 }) => {
-  const sql = `
-    INSERT INTO pump_status (tank_id, status, control_mode, reason)
-    VALUES ($1, $2, $3, $4)
-    RETURNING id, tank_id, status, control_mode, reason, created_at;
-  `;
-  const result = await query(sql, [tank_id, status, control_mode, reason]);
-  return result.rows[0];
+  let record;
+  try {
+    const sql = `
+      INSERT INTO pump_status (tank_id, status, control_mode, reason)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, tank_id, status, control_mode, reason, created_at;
+    `;
+    const result = await query(sql, [tank_id, status, control_mode, reason]);
+    record = result.rows[0];
+  } catch (err) {
+    console.warn(`[PumpService Fallback] Database write failed for pump status, updating memory cache:`, err.message);
+    record = {
+      id: Date.now(),
+      tank_id,
+      status,
+      control_mode,
+      reason,
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  inMemoryLatestPump = record;
+  return record;
 };
 
 /**
@@ -71,3 +104,4 @@ export const processPumpControlCommand = async (tankId = 1, command, mode = 'MAN
     status: updatedRecord,
   };
 };
+

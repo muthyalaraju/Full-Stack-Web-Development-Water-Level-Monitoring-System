@@ -138,3 +138,4 @@ export const broadcastWaterAlert = (alert) => {
 export const getActiveClientCount = () => {
   return io ? io.engine.clientsCount : 0;
 };
+

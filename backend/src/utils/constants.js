@@ -26,3 +26,4 @@ export const calculateWaterStatus = (percent) => {
   if (percent >= 80) return WATER_STATUS.FULL;
   return WATER_STATUS.NORMAL;
 };
+

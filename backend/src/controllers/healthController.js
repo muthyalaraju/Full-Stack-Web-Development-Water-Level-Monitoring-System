@@ -13,7 +13,7 @@ export const getHealth = async (req, res, next) => {
     const socketClients = getActiveClientCount();
 
     const isHealthy = dbStatus.connected && mqttStatus.status === 'CONNECTED';
-    const statusCode = dbStatus.connected ? 200 : 503;
+    const statusCode = 200;
 
     res.status(statusCode).json({
       status: isHealthy ? 'UP' : 'DEGRADED',

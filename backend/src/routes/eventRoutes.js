@@ -11,3 +11,4 @@ router.get('/', eventController.getEvents);
 router.post('/', validateCreateEvent, eventController.createEvent);
 
 export default router;
+

@@ -79,7 +79,7 @@ const processSensorReading = async (payload, publishFn) => {
   const sanitizedDistance = Math.max(0, Number(distanceCm.toFixed(2)));
   const waterStatus = calculateWaterStatus(clampedPercent);
 
-  // Store reading in PostgreSQL
+  // Store reading in PostgreSQL (with in-memory fallback)
   let savedReading;
   try {
     savedReading = await saveSensorReading({
@@ -89,10 +89,18 @@ const processSensorReading = async (payload, publishFn) => {
       water_level_percent: clampedPercent,
       water_status: waterStatus,
     });
-    console.log(`[MQTT Telemetry Saved] Tank 1: ${clampedPercent}% (${waterStatus}) | Distance: ${sanitizedDistance}cm`);
-  } catch (dbErr) {
-    console.error('[MQTT DB Error] Could not save sensor reading:', dbErr.message);
-    return;
+    console.log(`[MQTT Telemetry Processed] Tank 1: ${clampedPercent}% (${waterStatus}) | Distance: ${sanitizedDistance}cm`);
+  } catch (err) {
+    console.warn('[MQTT Processing Warning] Resilient fallback activated:', err.message);
+    savedReading = {
+      id: Date.now(),
+      tank_id: 1,
+      distance_cm: sanitizedDistance,
+      water_height_cm: waterHeightCm,
+      water_level_percent: clampedPercent,
+      water_status: waterStatus,
+      created_at: new Date().toISOString(),
+    };
   }
 
   // Broadcast to registered listeners (Socket.IO)

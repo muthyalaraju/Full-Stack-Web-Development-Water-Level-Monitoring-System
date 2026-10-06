@@ -41,3 +41,4 @@ export const disconnectSocket = () => {
  * Get current socket instance
  */
 export const getSocket = () => socket;
+

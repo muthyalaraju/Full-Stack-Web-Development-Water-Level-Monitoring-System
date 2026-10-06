@@ -93,3 +93,4 @@ export const validateHistoryQuery = (req, res, next) => {
 
   next();
 };
+

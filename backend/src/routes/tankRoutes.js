@@ -20,3 +20,4 @@ router.get('/readings', validateHistoryQuery, tankController.getReadings);
 router.post('/readings', tankController.createReading);
 
 export default router;
+
