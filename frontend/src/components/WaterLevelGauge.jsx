@@ -1,5 +1,5 @@
 import React from 'react';
-import { TANK_CONFIG, WATER_STATUS } from '../utils/constants';
+import { WATER_STATUS } from '../utils/constants';
 
 export const WaterLevelGauge = ({ percent = 0, heightCm = 0, distanceCm = 0, status = 'NORMAL' }) => {
   const safePercent = Math.min(100, Math.max(0, percent || 0));

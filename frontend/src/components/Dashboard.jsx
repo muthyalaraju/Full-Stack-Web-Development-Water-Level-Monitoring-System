@@ -12,7 +12,7 @@ import { ConnectionStatus } from './ConnectionStatus';
 import { SystemHealth } from './SystemHealth';
 import { RecentReadings } from './RecentReadings';
 import { Footer } from './Footer';
-import { RefreshCw, AlertCircle, Clock, Radio, Activity } from 'lucide-react';
+import { RefreshCw, AlertCircle, Clock, Radio } from 'lucide-react';
 
 export const Dashboard = () => {
   const {

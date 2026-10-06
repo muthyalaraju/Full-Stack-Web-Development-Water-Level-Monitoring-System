@@ -1,5 +1,5 @@
 import React from 'react';
-import { Power, Cpu, ShieldCheck, CheckCircle2, CircleSlash } from 'lucide-react';
+import { Power, ShieldCheck, CheckCircle2, CircleSlash } from 'lucide-react';
 import { PUMP_STATE, CONTROL_MODE } from '../utils/constants';
 
 export const PumpStatusCard = ({ pump }) => {

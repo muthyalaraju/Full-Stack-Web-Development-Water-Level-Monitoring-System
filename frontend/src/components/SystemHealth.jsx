@@ -1,5 +1,5 @@
 import React from 'react';
-import { HeartPulse, HardDrive, Shield, CheckCircle2 } from 'lucide-react';
+import { HeartPulse, HardDrive, Shield } from 'lucide-react';
 
 export const SystemHealth = () => {
   return (

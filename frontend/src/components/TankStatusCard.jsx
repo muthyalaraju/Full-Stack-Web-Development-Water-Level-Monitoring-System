@@ -1,5 +1,5 @@
 import React from 'react';
-import { Database, Gauge, Info, Layers, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Info, Layers, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { TANK_CONFIG, WATER_STATUS } from '../utils/constants';
 
 export const TankStatusCard = ({ tank, reading }) => {

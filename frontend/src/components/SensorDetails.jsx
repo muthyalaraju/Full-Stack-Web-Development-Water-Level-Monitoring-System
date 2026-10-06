@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, Radio, Zap, Monitor, Calculator } from 'lucide-react';
+import { Cpu, Calculator } from 'lucide-react';
 
 export const SensorDetails = ({ reading, tank }) => {
   const tankHeight = tank?.tank_height_cm || 20.0;

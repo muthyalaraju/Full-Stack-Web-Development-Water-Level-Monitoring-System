@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Square, RotateCcw, AlertTriangle, CheckCircle2, Radio, Info } from 'lucide-react';
+import { Play, Square, RotateCcw, CheckCircle2, Radio } from 'lucide-react';
 import { PUMP_STATE, CONTROL_MODE } from '../utils/constants';
 
 export const PumpControl = ({ pump, onControl, loading }) => {

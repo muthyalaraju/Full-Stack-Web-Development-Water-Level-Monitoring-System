@@ -1,5 +1,5 @@
 import React from 'react';
-import { Waves, Terminal, ShieldAlert } from 'lucide-react';
+import { Waves } from 'lucide-react';
 
 export const Footer = () => {
   return (

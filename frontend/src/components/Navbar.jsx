@@ -1,5 +1,5 @@
 import React from 'react';
-import { Waves, Activity, Radio, ShieldCheck, Cpu } from 'lucide-react';
+import { Waves, Activity, Radio } from 'lucide-react';
 
 export const Navbar = ({ connection }) => {
   const isLive = connection?.isLive || connection?.socket === 'CONNECTED';

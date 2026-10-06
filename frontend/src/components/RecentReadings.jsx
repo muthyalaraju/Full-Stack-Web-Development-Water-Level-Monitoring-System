@@ -1,5 +1,5 @@
 import React from 'react';
-import { History, ArrowUpDown, Filter } from 'lucide-react';
+import { History } from 'lucide-react';
 import { WATER_STATUS } from '../utils/constants';
 
 export const RecentReadings = ({ history = [], loading = false }) => {

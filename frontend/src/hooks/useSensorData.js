@@ -4,7 +4,7 @@
  * Completely eliminates mock data and provides live updates without page refreshes.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   fetchTankInfo,
   fetchLatestReading,
@@ -15,7 +15,7 @@ import {
   postPumpControl,
 } from '../services/api';
 import { connectSocket, disconnectSocket } from '../services/socket';
-import { calculateWaterStatus, WATER_STATUS, PUMP_STATE, CONTROL_MODE } from '../utils/constants';
+import { PUMP_STATE, CONTROL_MODE } from '../utils/constants';
 
 export const useSensorData = () => {
   const [tank, setTank] = useState(null);
@@ -118,7 +118,7 @@ export const useSensorData = () => {
   const controlPump = useCallback(async (command, mode = 'MANUAL') => {
     try {
       setActionLoading(true);
-      const res = await postPumpControl(command, mode);
+      await postPumpControl(command, mode);
 
       // Log dispatch action in client event panel
       setAlerts((prev) => [

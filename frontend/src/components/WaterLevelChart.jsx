@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,7 +11,7 @@ import {
   Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { Activity, Clock, BarChart3, AlertCircle, RefreshCw, Radio, TrendingUp } from 'lucide-react';
+import { Activity, BarChart3, AlertCircle, RefreshCw } from 'lucide-react';
 import { fetchReadingsByRange } from '../services/api';
 
 // Register Chart.js elements
