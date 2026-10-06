@@ -44,6 +44,26 @@ export const fetchReadingHistory = async (limit = 30) => {
 };
 
 /**
+ * Fetch Filtered Readings by Date Range
+ * @param {string} from - ISO timestamp
+ * @param {string} to - ISO timestamp
+ * @param {number} limit
+ */
+export const fetchReadingsByRange = async (from, to, limit = 100) => {
+  const params = new URLSearchParams();
+  if (from) params.append('from', from);
+  if (to) params.append('to', to);
+  if (limit) params.append('limit', limit.toString());
+
+  const response = await fetch(`${API_BASE_URL}/tank/readings?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: Failed to fetch historical range readings`);
+  }
+  const result = await response.json();
+  return result.data || [];
+};
+
+/**
  * Fetch Active Pump Status
  */
 export const fetchPumpStatus = async () => {
