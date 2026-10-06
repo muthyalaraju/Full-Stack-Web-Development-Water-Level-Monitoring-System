@@ -20,3 +20,4 @@ Install via **Tools -> Manage Libraries...**:
 - **LCD SCL**: GPIO 22
 
 For hardware schematics and electrical protection guidelines, see `../docs/hardware-connections.md`.
+

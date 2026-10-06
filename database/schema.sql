@@ -61,3 +61,4 @@ CREATE INDEX IF NOT EXISTS idx_system_events_created_at
     ON system_events (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_system_events_severity 
     ON system_events (severity, created_at DESC);
+

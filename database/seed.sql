@@ -23,3 +23,4 @@ VALUES (1, 'OFF', 'AUTO', 'Initial system startup configuration');
 INSERT INTO system_events (event_type, message, severity)
 VALUES 
     ('SYSTEM_INIT', 'Smart Water Level Monitoring System database initialized successfully.', 'INFO');
+

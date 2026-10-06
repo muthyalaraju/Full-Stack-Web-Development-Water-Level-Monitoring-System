@@ -65,3 +65,4 @@ Verify Tank 1 configuration:
 ```sql
 SELECT * FROM tanks WHERE id = 1;
 ```
+

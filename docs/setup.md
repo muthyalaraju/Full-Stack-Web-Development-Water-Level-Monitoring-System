@@ -72,3 +72,4 @@ This guide walks you through setting up the entire **Smart Water Level Monitorin
 3. Select Board: **ESP32 Dev Module**.
 4. Update `WIFI_SSID`, `WIFI_PASSWORD`, and `MQTT_BROKER_IP` in the sketch.
 5. Click **Upload**.
+

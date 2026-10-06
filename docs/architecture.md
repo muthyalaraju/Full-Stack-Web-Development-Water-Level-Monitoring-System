@@ -81,3 +81,4 @@ The **IoT-Based Smart Water Level Monitoring and Management System** is a full-s
 6. ESP32 publishes confirmed state to `water/tank1/pump/status`.
 7. Node.js logs state transition in PostgreSQL `pump_status` and broadcasts `pumpStatus` via Socket.IO.
 8. Dashboard reflects real-time confirmed pump state.
+

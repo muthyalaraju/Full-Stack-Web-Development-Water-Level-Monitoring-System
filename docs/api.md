@@ -132,3 +132,4 @@ Base URL: `http://localhost:5000/api`
 - **Description**: Returns logged alerts and lifecycle messages.
 - **Endpoint**: `POST /api/events`
 - **Description**: Record a manual event or alert.
+

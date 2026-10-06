@@ -68,3 +68,4 @@ $$V_{\text{out}} = V_{\text{in}} \times \left(\frac{R_2}{R_1 + R_2}\right) = 5\t
 ```
 - When GPIO 23 turns the relay ON, the internal switch bridges `COM` to `NO`, powering the pump.
 - When the relay turns OFF, the circuit opens safely.
+
