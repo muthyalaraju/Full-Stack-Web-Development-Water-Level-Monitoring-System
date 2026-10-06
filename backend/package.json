@@ -15,9 +15,11 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "mqtt": "^5.16.0",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "socket.io": "^4.8.4"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "socket.io-client": "^4.8.4"
   }
 }

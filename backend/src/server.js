@@ -1,9 +1,11 @@
+import http from 'http';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config/config.js';
 import { pool, testDbConnection } from './db/index.js';
 import { initMqttClient, closeMqttClient } from './mqtt/mqttClient.js';
+import { initSocket } from './socket/socketService.js';
 import { apiRateLimiter } from './middleware/rateLimiter.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 import apiRoutes from './routes/index.js';
@@ -53,13 +55,20 @@ app.get('/', (req, res) => {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// 7. Start HTTP Server & Initialize MQTT
-const server = app.listen(config.port, async () => {
+// 7. Create HTTP Server & Attach Socket.IO
+const httpServer = http.createServer(app);
+
+// Attach Socket.IO directly to existing HTTP server
+initSocket(httpServer);
+
+// 8. Start Listening & Initialize MQTT
+httpServer.listen(config.port, async () => {
   console.log(`================================================================`);
   console.log(`🚀 Smart Water Monitoring Backend running on port ${config.port}`);
   console.log(`   Mode: ${config.nodeEnv}`);
-  console.log(`   Health: http://localhost:${config.port}/api/health`);
-  console.log(`   Tank:   http://localhost:${config.port}/api/tank`);
+  console.log(`   Health:    http://localhost:${config.port}/api/health`);
+  console.log(`   Tank:      http://localhost:${config.port}/api/tank`);
+  console.log(`   Socket.IO: Attached on port ${config.port}`);
   console.log(`================================================================`);
 
   // Test Database Connection at startup
@@ -78,8 +87,8 @@ const server = app.listen(config.port, async () => {
 // Graceful Shutdown
 const handleShutdown = async (signal) => {
   console.log(`\n[${signal}] Initiating graceful shutdown...`);
-  server.close(async () => {
-    console.log('HTTP server closed.');
+  httpServer.close(async () => {
+    console.log('HTTP and Socket.IO server closed.');
     try {
       await closeMqttClient();
       await pool.end();

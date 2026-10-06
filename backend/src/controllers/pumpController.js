@@ -2,6 +2,7 @@ import * as pumpService from '../services/pumpService.js';
 import * as eventService from '../services/eventService.js';
 import { publishMqttMessage } from '../mqtt/mqttClient.js';
 import { MQTT_TOPICS } from '../mqtt/mqttTopics.js';
+import { broadcastPumpStatus } from '../socket/socketService.js';
 
 /**
  * GET /api/pump/status
@@ -48,7 +49,10 @@ export const controlPump = async (req, res, next) => {
       mode: command === 'AUTO' ? 'AUTO' : mode,
     });
 
-    // 3. Audit log the control action
+    // 3. Broadcast to all active Socket.IO clients
+    broadcastPumpStatus(result.status);
+
+    // 4. Audit log the control action
     await eventService.logEvent({
       event_type: 'PUMP_COMMAND',
       message: `Pump control command '${command}' (${mode}) processed. MQTT dispatched: ${mqttDispatched}`,

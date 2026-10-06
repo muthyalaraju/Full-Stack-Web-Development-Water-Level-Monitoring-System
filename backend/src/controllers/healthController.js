@@ -1,14 +1,16 @@
 import { testDbConnection } from '../db/index.js';
 import { getMqttStatus } from '../mqtt/mqttClient.js';
+import { getActiveClientCount } from '../socket/socketService.js';
 
 /**
  * GET /api/health
- * Comprehensive service health check reporting Express, PostgreSQL, and MQTT status
+ * Comprehensive service health check reporting Express, PostgreSQL, MQTT, and Socket.IO
  */
 export const getHealth = async (req, res, next) => {
   try {
     const dbStatus = await testDbConnection();
     const mqttStatus = getMqttStatus();
+    const socketClients = getActiveClientCount();
 
     const isHealthy = dbStatus.connected && mqttStatus.status === 'CONNECTED';
     const statusCode = dbStatus.connected ? 200 : 503;
@@ -29,6 +31,10 @@ export const getHealth = async (req, res, next) => {
           brokerUrl: mqttStatus.brokerUrl,
           lastConnected: mqttStatus.lastConnected,
           lastError: mqttStatus.lastError,
+        },
+        socketIo: {
+          status: 'ACTIVE',
+          connectedClients: socketClients,
         },
       },
     });
