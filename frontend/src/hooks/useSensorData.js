@@ -113,29 +113,26 @@ export const useSensorData = () => {
 
   /**
    * 2. Dispatch Manual / Auto Pump Control Command
+   * Never prematurely marks pump ON/OFF; strictly awaits Socket.IO confirmation from ESP32
    */
   const controlPump = useCallback(async (command, mode = 'MANUAL') => {
     try {
       setActionLoading(true);
       const res = await postPumpControl(command, mode);
 
-      if (res.data) {
-        setPump(res.data);
-      }
-
-      // Prepend immediate event log
+      // Log dispatch action in client event panel
       setAlerts((prev) => [
         {
           id: Date.now(),
-          event_type: 'PUMP_COMMAND',
-          message: `Manual command '${command}' (${mode}) dispatched.`,
+          event_type: 'PUMP_DISPATCH',
+          message: `Pump command '${command}' (${mode}) dispatched to MQTT. Awaiting hardware confirmation.`,
           severity: 'INFO',
           created_at: new Date().toISOString(),
         },
         ...prev.slice(0, 19),
       ]);
 
-      return { success: true };
+      return { success: true, pendingConfirmation: true };
     } catch (err) {
       console.error('Pump control failed:', err);
       return { success: false, error: err.message };
