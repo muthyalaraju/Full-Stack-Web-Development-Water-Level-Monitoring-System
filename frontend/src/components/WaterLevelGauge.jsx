@@ -33,37 +33,44 @@ export const WaterLevelGauge = ({ percent = 0, heightCm = 0, distanceCm = 0, sta
   const theme = getColorClasses();
 
   return (
-    <div className="flex flex-col items-center justify-center p-4">
+    <div
+      className="flex flex-col items-center justify-center p-3"
+      role="meter"
+      aria-valuenow={safePercent}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`Vertical water tank level: ${safePercent} percent, ${heightCm} centimeters water column, status ${status}`}
+    >
       {/* Visual Tank Container */}
-      <div className="relative w-40 sm:w-44 h-64 sm:h-72 bg-slate-900/90 rounded-2xl border-4 border-slate-700/80 shadow-2xl overflow-hidden flex flex-col justify-end">
+      <div className="relative w-40 sm:w-44 h-64 sm:h-72 bg-slate-950 rounded-2xl border-4 border-slate-700/80 shadow-2xl overflow-hidden flex flex-col justify-end ring-1 ring-slate-800">
         {/* Metric Height Indicators (Ruler tick marks) */}
-        <div className="absolute right-2 top-0 bottom-0 flex flex-col justify-between py-2 text-[10px] text-slate-400 font-mono select-none z-20 pointer-events-none">
+        <div className="absolute right-2 top-0 bottom-0 flex flex-col justify-between py-2 text-[10px] text-slate-300 font-mono select-none z-20 pointer-events-none">
           <span className="flex items-center space-x-1">
             <span>20cm (Full)</span>
-            <span className="w-2 h-0.5 bg-slate-600"></span>
+            <span className="w-2 h-0.5 bg-slate-500"></span>
           </span>
           <span className="flex items-center space-x-1">
             <span>15cm</span>
-            <span className="w-1.5 h-0.5 bg-slate-700"></span>
+            <span className="w-1.5 h-0.5 bg-slate-600"></span>
           </span>
           <span className="flex items-center space-x-1">
             <span>10cm (50%)</span>
-            <span className="w-2 h-0.5 bg-slate-600"></span>
+            <span className="w-2 h-0.5 bg-slate-500"></span>
           </span>
           <span className="flex items-center space-x-1">
             <span>5cm</span>
-            <span className="w-1.5 h-0.5 bg-slate-700"></span>
+            <span className="w-1.5 h-0.5 bg-slate-600"></span>
           </span>
           <span className="flex items-center space-x-1">
             <span>0cm (Empty)</span>
-            <span className="w-2 h-0.5 bg-slate-600"></span>
+            <span className="w-2 h-0.5 bg-slate-500"></span>
           </span>
         </div>
 
         {/* Ultrasonic Sensor Representation at the top lid */}
-        <div className="absolute top-0 inset-x-0 h-4 bg-slate-800 border-b border-slate-700 flex items-center justify-center space-x-3 z-20">
-          <div className="w-2 h-2 rounded-full bg-slate-500"></div>
-          <div className="w-2 h-2 rounded-full bg-slate-500"></div>
+        <div className="absolute top-0 inset-x-0 h-4 bg-slate-800 border-b border-slate-700 flex items-center justify-center space-x-3 z-20 shadow-inner">
+          <div className="w-2 h-2 rounded-full bg-slate-400 ring-1 ring-slate-600" title="Trigger Transducer"></div>
+          <div className="w-2 h-2 rounded-full bg-slate-400 ring-1 ring-slate-600" title="Echo Receiver"></div>
         </div>
 
         {/* Dynamic Liquid Fill */}
@@ -75,16 +82,16 @@ export const WaterLevelGauge = ({ percent = 0, heightCm = 0, distanceCm = 0, sta
           <div className={`absolute -top-3 left-0 right-0 h-4 ${theme.wave} rounded-t-[50%] animate-wave blur-[1px]`}></div>
           
           {/* Subtle Internal Reflection */}
-          <div className="absolute inset-y-0 left-2 w-2 bg-white/10 rounded-full blur-[1px]"></div>
+          <div className="absolute inset-y-0 left-2 w-2 bg-white/15 rounded-full blur-[1px]"></div>
         </div>
 
         {/* Central Water Level Percentage Overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-30">
-          <div className="bg-slate-950/70 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-slate-700/60 shadow-lg text-center">
+          <div className="bg-slate-950/80 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-slate-700 shadow-xl text-center">
             <span className="text-3xl font-extrabold tracking-tight text-white font-mono">
               {safePercent}%
             </span>
-            <p className="text-[11px] font-semibold tracking-wider uppercase text-slate-300">
+            <p className="text-[11px] font-bold tracking-wider uppercase text-slate-200">
               {status}
             </p>
           </div>
@@ -94,11 +101,11 @@ export const WaterLevelGauge = ({ percent = 0, heightCm = 0, distanceCm = 0, sta
       {/* Sensor Air Gap Indicator */}
       <div className="mt-4 flex items-center justify-center space-x-4 text-xs font-mono text-slate-400">
         <div>
-          <span className="text-slate-300 font-semibold">{heightCm} cm</span> water
+          <span className="text-slate-200 font-semibold">{heightCm} cm</span> water
         </div>
         <span>&middot;</span>
         <div>
-          <span className="text-slate-300 font-semibold">{distanceCm} cm</span> gap
+          <span className="text-slate-200 font-semibold">{distanceCm} cm</span> gap
         </div>
       </div>
     </div>

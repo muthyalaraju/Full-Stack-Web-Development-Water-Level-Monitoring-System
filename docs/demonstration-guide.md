@@ -146,3 +146,4 @@ Open **`http://localhost:5173`** in your browser. Notice the green pulsing **LIV
 | **CO-4: Node.js & Express REST Backend** | REST endpoints (`/api/health`, `/api/tank`, `/api/pump`, `/api/events`), Helmet security headers, CORS, Express rate limiting, and centralized error handling middleware. |
 | **CO-5: Real-Time & MQTT Integration** | MQTT client with reconnect resilience, single-tank validation, QoS 1 delivery, and Socket.IO real-time event pipeline (`waterReading`, `pumpStatus`, `waterAlert`). |
 | **CO-6: PostgreSQL Database** | PostgreSQL connection pool (`pg`), parameterized SQL queries, relational foreign keys with `ON DELETE CASCADE`, and B-Tree indexing on `(tank_id, created_at DESC)`. |
+

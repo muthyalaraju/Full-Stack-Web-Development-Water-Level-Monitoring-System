@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { WaterLevelGauge } from './WaterLevelGauge';
-import { Droplet, ArrowDownUp, Ruler, Clock, Radio, RefreshCw } from 'lucide-react';
+import { CircularGauge } from './CircularGauge';
+import { Droplet, ArrowDownUp, Ruler, Clock, Radio, RefreshCw, BarChart2, CircleDot } from 'lucide-react';
 import { WATER_STATUS } from '../utils/constants';
 
 export const WaterLevelCard = ({ reading, loading, error, onRefresh }) => {
+  // Support both vertical column and circular gauge representations
+  const [gaugeMode, setGaugeMode] = useState('vertical'); // 'vertical' | 'circular'
+
   if (loading && !reading) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[380px] animate-pulse">
+      <div
+        className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[420px] animate-pulse"
+        role="status"
+        aria-label="Loading water level telemetry"
+      >
         <div className="w-12 h-12 rounded-full bg-slate-800 mb-4"></div>
         <div className="h-6 w-32 bg-slate-800 rounded mb-2"></div>
         <div className="h-4 w-48 bg-slate-800/60 rounded"></div>
@@ -16,15 +24,19 @@ export const WaterLevelCard = ({ reading, loading, error, onRefresh }) => {
 
   if (error && !reading) {
     return (
-      <div className="bg-slate-900 border border-rose-900/40 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[380px] text-center">
-        <div className="w-12 h-12 rounded-full bg-rose-900/20 text-rose-400 flex items-center justify-center mb-4">
+      <div
+        className="bg-slate-900 border border-rose-900/40 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[420px] text-center"
+        role="alert"
+      >
+        <div className="w-12 h-12 rounded-full bg-rose-900/20 text-rose-400 flex items-center justify-center mb-4 border border-rose-500/20">
           <Droplet className="w-6 h-6" />
         </div>
         <h3 className="text-base font-semibold text-rose-300 mb-1">Telemetry Unavailable</h3>
         <p className="text-xs text-slate-400 mb-4 max-w-xs">{error}</p>
         <button
           onClick={onRefresh}
-          className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition"
+          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          aria-label="Retry fetching telemetry"
         >
           Retry Connection
         </button>
@@ -34,7 +46,10 @@ export const WaterLevelCard = ({ reading, loading, error, onRefresh }) => {
 
   if (!reading) {
     return (
-      <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[380px] text-center">
+      <div
+        className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[420px] text-center"
+        role="status"
+      >
         <div className="w-12 h-12 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-4 border border-cyan-500/20 animate-pulse">
           <Radio className="w-6 h-6" />
         </div>
@@ -44,7 +59,8 @@ export const WaterLevelCard = ({ reading, loading, error, onRefresh }) => {
         </p>
         <button
           onClick={onRefresh}
-          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition"
+          className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          aria-label="Check telemetry status again"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           <span>Check Again</span>
@@ -63,33 +79,107 @@ export const WaterLevelCard = ({ reading, loading, error, onRefresh }) => {
 
   const formattedTime = new Date(created_at).toLocaleTimeString();
 
+  // Status visual pill
+  const getStatusPill = () => {
+    switch (water_status) {
+      case WATER_STATUS.LOW:
+        return 'bg-rose-500/15 border-rose-500/30 text-rose-300';
+      case WATER_STATUS.FULL:
+        return 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300';
+      default:
+        return 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300';
+    }
+  };
+
   return (
-    <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
+    <article
+      className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col justify-between"
+      aria-label="Water Level Monitoring Card"
+    >
       {/* Background radial glow */}
       <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-800/60 pb-3 mb-2">
-        <div className="flex items-center space-x-2">
-          <Droplet className="w-5 h-5 text-cyan-400" />
-          <h2 className="text-base font-semibold text-white">Water Level Status</h2>
+      <div>
+        {/* Header with View Toggle (Vertical vs Circular) */}
+        <div className="flex items-center justify-between border-b border-slate-800/60 pb-3 mb-3">
+          <div className="flex items-center space-x-2">
+            <Droplet className="w-5 h-5 text-cyan-400" />
+            <h2 className="text-base font-semibold text-white">Water Level Card</h2>
+          </div>
+
+          {/* Accessible Gauge Selector */}
+          <div
+            className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs"
+            role="tablist"
+            aria-label="Gauge visualization mode"
+          >
+            <button
+              role="tab"
+              aria-selected={gaugeMode === 'vertical'}
+              onClick={() => setGaugeMode('vertical')}
+              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg font-medium transition ${
+                gaugeMode === 'vertical'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400`}
+              aria-label="Show vertical tank indicator"
+            >
+              <BarChart2 className="w-3.5 h-3.5" />
+              <span>Vertical</span>
+            </button>
+
+            <button
+              role="tab"
+              aria-selected={gaugeMode === 'circular'}
+              onClick={() => setGaugeMode('circular')}
+              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg font-medium transition ${
+                gaugeMode === 'circular'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              } focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400`}
+              aria-label="Show circular radial gauge"
+            >
+              <CircleDot className="w-3.5 h-3.5" />
+              <span>Circular</span>
+            </button>
+          </div>
         </div>
-        <div className="flex items-center space-x-1.5 text-xs text-slate-400">
-          <Clock className="w-3.5 h-3.5" />
-          <span>{formattedTime}</span>
+
+        {/* Dynamic State Pill & Time */}
+        <div className="flex items-center justify-between mb-2">
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border ${getStatusPill()}`}
+          >
+            STATE: {water_status}
+          </span>
+          <div className="flex items-center space-x-1 text-xs text-slate-400 font-mono">
+            <Clock className="w-3.5 h-3.5 text-slate-500" />
+            <span>{formattedTime}</span>
+          </div>
+        </div>
+
+        {/* Dynamic Gauge Indicator (Vertical vs Circular) */}
+        <div className="py-1">
+          {gaugeMode === 'vertical' ? (
+            <WaterLevelGauge
+              percent={water_level_percent}
+              heightCm={water_height_cm}
+              distanceCm={distance_cm}
+              status={water_status}
+            />
+          ) : (
+            <CircularGauge
+              percent={water_level_percent}
+              heightCm={water_height_cm}
+              distanceCm={distance_cm}
+              status={water_status}
+            />
+          )}
         </div>
       </div>
 
-      {/* Tank Gauge Visualization */}
-      <WaterLevelGauge
-        percent={water_level_percent}
-        heightCm={water_height_cm}
-        distanceCm={distance_cm}
-        status={water_status}
-      />
-
       {/* Metric Breakdown Grid */}
-      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800/60">
+      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800/60 mt-2">
         <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60 flex items-center space-x-3">
           <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
             <Ruler className="w-4 h-4" />
@@ -114,6 +204,6 @@ export const WaterLevelCard = ({ reading, loading, error, onRefresh }) => {
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
