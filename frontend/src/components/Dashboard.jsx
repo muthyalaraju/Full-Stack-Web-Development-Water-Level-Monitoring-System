@@ -12,7 +12,7 @@ import { ConnectionStatus } from './ConnectionStatus';
 import { SystemHealth } from './SystemHealth';
 import { RecentReadings } from './RecentReadings';
 import { Footer } from './Footer';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Clock, Radio } from 'lucide-react';
 
 export const Dashboard = () => {
   const {
@@ -22,12 +22,17 @@ export const Dashboard = () => {
     pump,
     alerts,
     connection,
+    lastUpdated,
     loading,
     error,
     actionLoading,
     controlPump,
     refreshData,
   } = useSensorData();
+
+  const formattedLastUpdated = lastUpdated
+    ? new Date(lastUpdated).toLocaleTimeString()
+    : 'Waiting for stream';
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
@@ -56,19 +61,33 @@ export const Dashboard = () => {
         {/* Top Overview: Quick Status Banner */}
         <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-900/60 border border-slate-800/80 p-4 rounded-2xl gap-3">
           <div>
-            <h2 className="text-lg font-bold text-white">Live Monitoring Console</h2>
-            <p className="text-xs text-slate-400">
-              Active telemetry node: <span className="text-cyan-400 font-medium">Tank #1 (Prototype 20cm)</span> &middot; HC-SR04 Active
+            <div className="flex items-center space-x-2">
+              <h2 className="text-lg font-bold text-white">Live Monitoring Console</h2>
+              <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-800 text-cyan-400 border border-slate-700">
+                <Radio className="w-3 h-3 text-cyan-400" />
+                <span>Socket.IO Active</span>
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Target Node: <strong className="text-slate-200">Tank #1 (Prototype 20cm)</strong> &middot; Real-Time Telemetry Stream
             </p>
           </div>
-          <button
-            onClick={refreshData}
-            disabled={loading}
-            className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-xs font-medium text-slate-300 transition active:scale-95 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${loading ? 'animate-spin' : ''}`} />
-            <span>Sync Data</span>
-          </button>
+
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1.5 text-xs text-slate-400 font-mono bg-slate-950/70 px-3 py-1.5 rounded-xl border border-slate-800">
+              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Updated: {formattedLastUpdated}</span>
+            </div>
+
+            <button
+              onClick={refreshData}
+              disabled={loading}
+              className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-xs font-medium text-slate-300 transition active:scale-95 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+          </div>
         </section>
 
         {/* Primary Row: Water Level Card + Tank Specs + Pump Actuator State */}

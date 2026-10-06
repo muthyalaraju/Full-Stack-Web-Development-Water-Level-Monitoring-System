@@ -1,7 +1,7 @@
 /**
  * Custom Hook: useSensorData
- * Centralized telemetry state manager for the Smart Water Level Monitoring Dashboard.
- * Handles data fetching, live state tracking, alerts, and prepares Socket.IO integration.
+ * Real-time telemetry hook connecting React to the Express REST API and Socket.IO.
+ * Completely eliminates mock data and provides live updates without page refreshes.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -11,90 +11,124 @@ import {
   fetchReadingHistory,
   fetchPumpStatus,
   fetchSystemEvents,
+  fetchSystemHealth,
   postPumpControl,
 } from '../services/api';
-import { calculateWaterStatus, WATER_STATUS } from '../utils/constants';
+import { connectSocket, disconnectSocket } from '../services/socket';
+import { calculateWaterStatus, WATER_STATUS, PUMP_STATE, CONTROL_MODE } from '../utils/constants';
 
 export const useSensorData = () => {
   const [tank, setTank] = useState(null);
   const [reading, setReading] = useState(null);
   const [history, setHistory] = useState([]);
   const [pump, setPump] = useState({
-    status: 'OFF',
-    control_mode: 'AUTO',
-    reason: 'Initializing...',
+    status: PUMP_STATE.OFF,
+    control_mode: CONTROL_MODE.AUTO,
+    reason: 'Awaiting initial telemetry...',
     created_at: new Date().toISOString(),
   });
   const [alerts, setAlerts] = useState([]);
   const [connection, setConnection] = useState({
-    backend: 'ONLINE',
-    mqtt: 'CONNECTED',
-    sensor: 'CONNECTED',
-    database: 'CONNECTED',
-    socket: 'CONNECTED',
+    backend: 'CONNECTING',
+    mqtt: 'UNKNOWN',
+    sensor: 'WAITING',
+    database: 'CHECKING',
+    socket: 'CONNECTING',
+    isLive: false,
   });
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Reference for socket connection cleanup (prepared for Socket.IO in Phase 3)
-  const socketRef = useRef(null);
-
   /**
-   * Initial data load
+   * 1. Load Initial Data from REST Endpoints on Mount
    */
   const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [tankData, latestReading, historyData, pumpData, eventsData] = await Promise.all([
-        fetchTankInfo(),
-        fetchLatestReading(),
-        fetchReadingHistory(20),
-        fetchPumpStatus(),
-        fetchSystemEvents(10),
-      ]);
+      // Probe health first
+      const health = await fetchSystemHealth().catch(() => null);
+      if (health) {
+        setConnection((prev) => ({
+          ...prev,
+          backend: health.services?.backend || 'ONLINE',
+          mqtt: health.services?.mqtt || 'CONNECTED',
+          database: health.services?.database || 'CONNECTED',
+        }));
+      }
 
-      setTank(tankData);
-      setReading(latestReading);
-      setHistory(historyData);
-      setPump(pumpData);
-      setAlerts(eventsData);
+      // Parallel fetch of initial records
+      const [tankData, latestReadingData, historyData, pumpData, eventsData] =
+        await Promise.allSettled([
+          fetchTankInfo(),
+          fetchLatestReading(),
+          fetchReadingHistory(30),
+          fetchPumpStatus(),
+          fetchSystemEvents(15),
+        ]);
+
+      if (tankData.status === 'fulfilled' && tankData.value) {
+        setTank(tankData.value);
+      }
+
+      if (latestReadingData.status === 'fulfilled' && latestReadingData.value) {
+        setReading(latestReadingData.value);
+        setLastUpdated(latestReadingData.value.created_at || new Date().toISOString());
+        setConnection((prev) => ({ ...prev, sensor: 'CONNECTED' }));
+      } else {
+        setConnection((prev) => ({ ...prev, sensor: 'AWAITING DATA' }));
+      }
+
+      if (historyData.status === 'fulfilled' && Array.isArray(historyData.value)) {
+        setHistory(historyData.value);
+      }
+
+      if (pumpData.status === 'fulfilled' && pumpData.value) {
+        setPump(pumpData.value);
+      }
+
+      if (eventsData.status === 'fulfilled' && Array.isArray(eventsData.value)) {
+        setAlerts(eventsData.value);
+      }
+
+      setConnection((prev) => ({
+        ...prev,
+        backend: 'ONLINE',
+      }));
     } catch (err) {
-      console.error('Failed to load initial sensor data:', err);
-      setError(err.message || 'Error connecting to data services');
+      console.error('Failed to load initial REST data:', err);
+      setError('Unable to communicate with the monitoring backend. Ensure server is running.');
+      setConnection((prev) => ({
+        ...prev,
+        backend: 'OFFLINE',
+        isLive: false,
+      }));
     } finally {
       setLoading(false);
     }
   }, []);
 
   /**
-   * Dispatch manual/auto pump control command
+   * 2. Dispatch Manual / Auto Pump Control Command
    */
   const controlPump = useCallback(async (command, mode = 'MANUAL') => {
     try {
       setActionLoading(true);
       const res = await postPumpControl(command, mode);
 
-      if (res.status) {
-        setPump(res.status);
-      } else {
-        setPump((prev) => ({
-          ...prev,
-          status: command === 'AUTO' ? prev.status : command,
-          control_mode: mode,
-          reason: `Manual control command (${command}) applied`,
-          created_at: new Date().toISOString(),
-        }));
+      if (res.data) {
+        setPump(res.data);
       }
 
-      // Add a system event log for the action
+      // Prepend immediate event log
       setAlerts((prev) => [
         {
           id: Date.now(),
-          event_type: 'PUMP_ACTION',
-          message: `Pump control command '${command}' (${mode}) dispatched.`,
+          event_type: 'PUMP_COMMAND',
+          message: `Manual command '${command}' (${mode}) dispatched.`,
           severity: 'INFO',
           created_at: new Date().toISOString(),
         },
@@ -111,67 +145,98 @@ export const useSensorData = () => {
   }, []);
 
   /**
-   * In Phase 1 Dev Mock mode: Provide a gentle telemetry ticker to demonstrate live UI & charts
+   * 3. Socket.IO Real-Time Stream Wiring
    */
   useEffect(() => {
+    // Load baseline data from database
     loadInitialData();
 
-    // Dev mode demonstration ticker (simulates sensor publishing every 3.5 seconds)
-    const interval = setInterval(() => {
-      setReading((prev) => {
-        if (!prev) return prev;
+    // Establish WebSocket stream
+    const socket = connectSocket();
 
-        // Slight simulated variation (-1% to +1%)
-        const delta = (Math.random() - 0.48) * 1.5;
-        const newPercent = Math.min(100, Math.max(5, Math.round(prev.water_level_percent + delta)));
-        const tankHeight = 20.0;
-        const newHeight = Number(((tankHeight * newPercent) / 100).toFixed(1));
-        const newDistance = Number((tankHeight - newHeight).toFixed(1));
-        const newStatus = calculateWaterStatus(newPercent);
-        const now = new Date().toISOString();
+    socket.on('connect', () => {
+      console.log('⚡ [Dashboard Socket.IO] Connected to backend stream:', socket.id);
+      setConnection((prev) => ({
+        ...prev,
+        socket: 'CONNECTED',
+        isLive: true,
+        backend: 'ONLINE',
+      }));
+    });
 
-        const updated = {
-          ...prev,
-          distance_cm: newDistance,
-          water_height_cm: newHeight,
-          water_level_percent: newPercent,
-          water_status: newStatus,
-          created_at: now,
-        };
+    socket.on('connected', (data) => {
+      console.log('⚡ [Dashboard Handshake]', data);
+    });
 
-        // Append to rolling chart history
-        setHistory((currHistory) => {
-          const nextHistory = [...currHistory, updated];
-          return nextHistory.slice(-25); // Keep last 25 readings
-        });
+    socket.on('disconnect', (reason) => {
+      console.warn('⚡ [Dashboard Socket.IO] Disconnected:', reason);
+      setConnection((prev) => ({
+        ...prev,
+        socket: 'DISCONNECTED',
+        isLive: false,
+      }));
+    });
 
-        // Trigger auto pump if in AUTO mode and thresholds hit
-        setPump((currPump) => {
-          if (currPump.control_mode === 'AUTO') {
-            if (newPercent <= 20 && currPump.status !== 'ON') {
-              return {
-                ...currPump,
-                status: 'ON',
-                reason: `Automatic trigger: Water level at ${newPercent}% (<= 20% LOW threshold)`,
-                created_at: now,
-              };
-            } else if (newPercent >= 80 && currPump.status !== 'OFF') {
-              return {
-                ...currPump,
-                status: 'OFF',
-                reason: `Automatic trigger: Water level at ${newPercent}% (>= 80% FULL threshold)`,
-                created_at: now,
-              };
-            }
-          }
-          return currPump;
-        });
+    socket.on('connect_error', (err) => {
+      console.error('⚡ [Dashboard Socket.IO Error]:', err.message);
+      setConnection((prev) => ({
+        ...prev,
+        socket: 'ERROR',
+        isLive: false,
+      }));
+    });
 
-        return updated;
+    // Event: Incoming Validated Water Reading from ESP32
+    socket.on('waterReading', (newReading) => {
+      console.log('🌊 [Live Reading Received]:', newReading);
+
+      setReading(newReading);
+      setLastUpdated(newReading.created_at || new Date().toISOString());
+      setConnection((prev) => ({
+        ...prev,
+        sensor: 'CONNECTED',
+        isLive: true,
+      }));
+
+      // Append to rolling chart history (keep up to 35 latest readings)
+      setHistory((prevHistory) => {
+        const next = [...prevHistory, newReading];
+        return next.slice(-35);
       });
-    }, 3500);
+    });
 
-    return () => clearInterval(interval);
+    // Event: Live Pump State Transition
+    socket.on('pumpStatus', (newPumpStatus) => {
+      console.log('⚡ [Live Pump Status Received]:', newPumpStatus);
+      setPump(newPumpStatus);
+    });
+
+    // Event: Water Level Alert or Warning
+    socket.on('waterAlert', (newAlert) => {
+      console.warn('🚨 [Live Alert Received]:', newAlert);
+      setAlerts((prevAlerts) => [
+        {
+          id: Date.now(),
+          event_type: newAlert.event_type || 'ALERT',
+          message: newAlert.message,
+          severity: newAlert.severity || 'WARNING',
+          created_at: new Date().toISOString(),
+        },
+        ...prevAlerts.slice(0, 19),
+      ]);
+    });
+
+    // Cleanup listeners on unmount
+    return () => {
+      socket.off('connect');
+      socket.off('connected');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.off('waterReading');
+      socket.off('pumpStatus');
+      socket.off('waterAlert');
+      disconnectSocket();
+    };
   }, [loadInitialData]);
 
   return {
@@ -181,6 +246,7 @@ export const useSensorData = () => {
     pump,
     alerts,
     connection,
+    lastUpdated,
     loading,
     error,
     actionLoading,

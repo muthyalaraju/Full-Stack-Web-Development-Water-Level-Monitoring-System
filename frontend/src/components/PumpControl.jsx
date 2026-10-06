@@ -96,3 +96,4 @@ export const PumpControl = ({ pump, onControl, loading }) => {
     </div>
   );
 };
+

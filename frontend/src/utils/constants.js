@@ -53,3 +53,4 @@ export const calculateWaterStatus = (percent) => {
   if (percent >= TANK_CONFIG.THRESHOLDS.FULL) return WATER_STATUS.FULL;
   return WATER_STATUS.NORMAL;
 };
+

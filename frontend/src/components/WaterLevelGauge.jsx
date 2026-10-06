@@ -104,3 +104,4 @@ export const WaterLevelGauge = ({ percent = 0, heightCm = 0, distanceCm = 0, sta
     </div>
   );
 };
+

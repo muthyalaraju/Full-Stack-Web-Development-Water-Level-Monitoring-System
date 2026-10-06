@@ -1,6 +1,6 @@
 import React from 'react';
 import { WaterLevelGauge } from './WaterLevelGauge';
-import { Droplet, ArrowDownUp, Ruler, Clock, RefreshCw } from 'lucide-react';
+import { Droplet, ArrowDownUp, Ruler, Clock, Radio, RefreshCw } from 'lucide-react';
 import { WATER_STATUS } from '../utils/constants';
 
 export const WaterLevelCard = ({ reading, loading, error, onRefresh }) => {
@@ -32,13 +32,34 @@ export const WaterLevelCard = ({ reading, loading, error, onRefresh }) => {
     );
   }
 
+  if (!reading) {
+    return (
+      <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[380px] text-center">
+        <div className="w-12 h-12 rounded-full bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-4 border border-cyan-500/20 animate-pulse">
+          <Radio className="w-6 h-6" />
+        </div>
+        <h3 className="text-base font-semibold text-white mb-1">Awaiting Sensor Telemetry</h3>
+        <p className="text-xs text-slate-400 mb-4 max-w-xs">
+          Backend is ready and listening on MQTT. Connect the ESP32 or publish a reading to start live streaming.
+        </p>
+        <button
+          onClick={onRefresh}
+          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Check Again</span>
+        </button>
+      </div>
+    );
+  }
+
   const {
     water_level_percent = 0,
     water_height_cm = 0,
     distance_cm = 0,
     water_status = WATER_STATUS.NORMAL,
     created_at = new Date().toISOString(),
-  } = reading || {};
+  } = reading;
 
   const formattedTime = new Date(created_at).toLocaleTimeString();
 

@@ -80,3 +80,4 @@ export const generateMockHistory = (count = 15) => {
   }
   return readings;
 };
+

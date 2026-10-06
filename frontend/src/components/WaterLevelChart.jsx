@@ -170,3 +170,4 @@ export const WaterLevelChart = ({ history = [], loading = false }) => {
     </div>
   );
 };
+

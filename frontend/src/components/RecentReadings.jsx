@@ -93,3 +93,4 @@ export const RecentReadings = ({ history = [], loading = false }) => {
     </div>
   );
 };
+
