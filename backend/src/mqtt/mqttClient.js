@@ -56,7 +56,8 @@ export const initMqttClient = () => {
   const options = {
     clientId,
     clean: true,
-    connectTimeout: 20000,
+    connectTimeout: 30000, // 30 seconds timeout
+    keepalive: 60,
     reconnectPeriod: 5000, // Auto-reconnect every 5 seconds
     ...(config.mqtt.username && { username: config.mqtt.username }),
     ...(config.mqtt.password && { password: config.mqtt.password }),
@@ -87,7 +88,7 @@ export const initMqttClient = () => {
 
     client.on('reconnect', () => {
       connectionState.status = 'CONNECTING';
-      console.log('[MQTT] Attempting to reconnect to broker...');
+      console.log('[MQTT] Reconnecting to broker...');
     });
 
     client.on('offline', () => {
@@ -98,8 +99,11 @@ export const initMqttClient = () => {
     client.on('error', (err) => {
       connectionState.status = 'ERROR';
       connectionState.lastError = err.message;
-      console.error('[MQTT Client Error]:', err.message);
-      // Do not rethrow; keep process alive and allow reconnection attempts
+      if (err.message.includes('connack timeout')) {
+        console.warn(`⚠️ [MQTT Warning]: Broker took too long to acknowledge connection (connack timeout). Auto-retrying in 5s...`);
+      } else {
+        console.error('[MQTT Client Error]:', err.message);
+      }
     });
 
     client.on('close', () => {

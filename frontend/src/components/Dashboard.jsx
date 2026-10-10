@@ -9,7 +9,6 @@ import { WaterLevelChart } from './WaterLevelChart';
 import { SensorDetails } from './SensorDetails';
 import { AlertPanel } from './AlertPanel';
 import { ConnectionStatus } from './ConnectionStatus';
-import { SystemHealth } from './SystemHealth';
 import { RecentReadings } from './RecentReadings';
 import { Footer } from './Footer';
 import { RefreshCw, AlertCircle, Clock, Radio } from 'lucide-react';
@@ -159,18 +158,15 @@ export const Dashboard = () => {
           />
         </section>
 
-        {/* Row 4: System Connection Status + System Diagnostics + Alerts Panel */}
+        {/* Row 4: System Connection Status + Alerts Panel */}
         <section
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          aria-label="System Diagnostics, Network Links, and Alerts"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+          aria-label="System Network Links and Alerts"
         >
           {/* Item 2: System Connection Status (CONNECTED / DISCONNECTED) */}
           <ConnectionStatus
             connection={connection}
           />
-
-          {/* System Diagnostics & Course Outcomes */}
-          <SystemHealth />
 
           {/* Item 11: Real-Time Alerts and PostgreSQL Audit Events */}
           <AlertPanel

@@ -1,0 +1,15 @@
+{
+  "name": "water-level-monitoring-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "IoT-Based Smart Water Level Monitoring and Management System",
+  "scripts": {
+    "start": "npm --prefix backend start",
+    "backend": "npm --prefix backend start",
+    "frontend": "npm --prefix frontend dev",
+    "dev": "npm --prefix frontend dev",
+    "simulate": "npm --prefix backend run simulate",
+    "verify": "npm --prefix backend run verify:e2e"
+  }
+}
+
